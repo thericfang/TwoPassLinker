@@ -1,6 +1,8 @@
 import java.util.Scanner;
 import java.io.*;
 public class TwoPassLinker {
+	static int modNum = 0;
+
 	public static void main(String args[]) {
 		
 
@@ -19,4 +21,11 @@ public class TwoPassLinker {
 		
 		return null;
 	}
+
+	public static void firstPass(Scanner inputScanner) {
+		while (inputScanner.hasNext()) {
+			
+		}
+	}
+
 }
