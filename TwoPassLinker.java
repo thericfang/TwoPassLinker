@@ -1,15 +1,19 @@
 import java.util.Scanner;
 import java.io.*;
 import java.util.*;
+
 public class TwoPassLinker {
+	static ArrayList<String> totalUses = new ArrayList<String>(); 
 	static int modNum;
-	static HashMap<String, Integer> table = new HashMap<String, Integer>(); // Hash Map for symbol table
+	static int useCount;
+	static LinkedHashMap<String, ArrayList<Integer>> table = new LinkedHashMap<String, ArrayList<Integer>>(); // Hash Map for symbol table
 	static ArrayList<ArrayList<String>> lines = new ArrayList<ArrayList<String>>(); // Lines of lines
 	static ArrayList<Integer> baseAddress = new ArrayList<Integer>(); // Each module's base address 
 	static ArrayList<ArrayList<Integer>> modAddress = new ArrayList<ArrayList<Integer>>(); // ArrayList of ArrayList in each module
 	static ArrayList<Integer> countNT = new ArrayList<Integer>(); // ArrayList for number of NT uses
 	// static HashMap<Integer, String> uses = new HashMap<Integer, String>(); // Hashmap for external symbol uses
-	static ArrayList<ArrayList<String>> modUses = new ArrayList<ArrayList<String>>(); // list of hashmaps
+	static ArrayList<String[]> modUses = new ArrayList<String[]>(); // list of hashmaps
+
 	public static void main(String args[]) {
 		System.out.println("Please state the type of input:"); // First determine what type of input
 		System.out.println("1. File");
@@ -22,9 +26,22 @@ public class TwoPassLinker {
 			String inputName = kbScanner.nextLine();
 			firstPass(newScanner(inputName));
 			secondPass(newScanner(inputName));
+			kbScanner.close();
 		}
+		else {
+			System.out.println("Please type the input. Type * to finish reading.");
+			Scanner input = new Scanner(System.in);
+			String s = "";
+			while (input.hasNext() && !s.equals("exit")) {
+				s = input.next();		
+			}
+			input.close();
+			
 
-
+		
+			firstPass(input);
+			secondPass(input);
+		}
 	}
 	public static Scanner newScanner(String inputName) {
 
@@ -112,17 +129,19 @@ public class TwoPassLinker {
 						lines.get(lineCount).add(temp);
 						lineSize--;
 						j++;
+						
 					}
 				}
 			}
 			lineCount++;
 		}
-		// System.out.println(Arrays.toString(lines.toArray()));
+	
 		int increment = 0;
 		for (int i = 0; i < lineCount; i++) { // Find base addresses
 			if (i == 0) {
 				baseAddress.add(increment);
 			}
+			
 			else if ((i % 3) == 0) { // When reaching new module
 				increment += Integer.parseInt(lines.get(i-1).get(0));
 				baseAddress.add(increment); 
@@ -132,24 +151,29 @@ public class TwoPassLinker {
 		}
 		
 		for (int k = 0; k < lines.size(); k+=3) { // Find the absolute address for external symbol
-			
 			int numOfSymbols = lines.get(k).size(); 
-			// System.out.println(Integer.parseInt(lines.get(k).get(0)));
 			for (int z = 1; z < numOfSymbols; z+=2) {
 				ArrayList currentList = lines.get(k);
-				if (table.get((String)currentList.get(z)!= null)) {
-					System.out.println("Error: This variable is multiply defined; last value used.")
+				if (table.containsKey((String)currentList.get(z))) {
+					table.get((String)currentList.get(z)).add((baseAddress.get(curMod)) + (Integer.parseInt((String)(currentList.get(z+1)))));
 				}
-				table.put((String)currentList.get(z), (baseAddress.get(curMod)) + (Integer.parseInt((String)(currentList.get(z+1))))); //hash map adding
-				// System.out.println(table);
-				// System.out.println((baseAddress.get(curMod)) + (Integer.parseInt((String)(currentList.get(z+1)))));
+				// if ((baseAddress.get(curMod) + Integer.parseInt((String)(currentList.get(z+1)))) >= useCount) {
+				// 	ArrayList temp = new ArrayList<Integer>();
+				// 	temp.add(useCount-1);
+				// 	table.put((String)currentList.get(z), temp);
+				// }
+				else {
+					ArrayList temp = new ArrayList<Integer>();
+					temp.add((baseAddress.get(curMod)) + (Integer.parseInt((String)(currentList.get(z+1)))));
+					table.put((String)currentList.get(z), temp); //hash map adding
+				}
+		
 			}
 			curMod++;
 			
 			
 		}
 
-		System.out.println(table.get("X22"));
 		
 	}
 	/* Pass two uses the base addresses and the symbol table computed in pass one to generate the actual output
@@ -168,48 +192,84 @@ public class TwoPassLinker {
 					}
 					else {
 						countNT.add(Integer.parseInt(lines.get(i-3).get(j)) + countNT.get(curMod-1));
+					
 					}
 				}
 				else {
 					modAddress.get(curMod).add(Integer.parseInt(lines.get(i).get(j)));	
+					useCount++;
 				}
 			}
 			curMod++;
 		}
-		// System.out.println(countNT);
-		// System.out.println(modAddress);
+	
 		curMod = 0;
 		String s = "";
-		
-		for (int i = 1; i < lines.size(); i+=3) { // Add uses of external symbols to a hash map with indices corresponding to module number
-			ArrayList<String> uses = new ArrayList<String>(); 
+		boolean[] duplicate = new boolean[useCount];
+		for (int i = 1; i < lines.size(); i+=3) { // Add uses of external symbols to a list with indices corresponding to module number
+			String[] uses = new String[modAddress.get(i/3).size()]; 
+			int index = 0;
 			for (int j = 1; j < lines.get(i).size(); j++) {
 				if (j == 1) {
 					s = lines.get(i).get(j);
 				}
 				else if (isInteger((String)(lines.get(i).get(j-1))) && (Integer.parseInt(lines.get(i).get(j-1)) == -1)) {
 					s = lines.get(i).get(j);
+			
 				}
 				else if (isInteger(lines.get(i).get(j)) && Integer.parseInt(lines.get(i).get(j)) == -1) {
 					s = "";
+					
 				}
 				else {
-					uses.add(s);
+					index = Integer.parseInt(lines.get(i).get(j));
+					if (uses[index] != null) {
+						duplicate[index] = true;
+					}
+					else {
+						duplicate[index] = false;
+					}
+					uses[index] = s;
 				}
-				// System.out.println(uses);
 
 			}
 			modUses.add(uses);
 			curMod++;
 		}
-		// System.out.println(modUses);
-		ArrayList<Integer> resolvedAddress = new ArrayList<Integer>();
+		for (int i = 0; i < modUses.size(); i++) {
+			for (int j = 0; j < modUses.get(i).length; j++) {
+				totalUses.add(modUses.get(i)[j]);
+			}
+		}
+		System.out.println("Symbol Table");
+		ArrayList<String> notUsed = new ArrayList<String>();
+		if (!table.isEmpty()) {
+			for (Map.Entry<String, ArrayList<Integer>> entry : table.entrySet()) {
+				if (entry.getValue().get(0) >= useCount) {
+					ArrayList<Integer> temp = new ArrayList<Integer>();
+					temp.add(useCount-1);
+					table.put(entry.getKey(), temp);
+					System.out.println(entry.getKey()+"="+(useCount-1)+ " Error: Definition exceeds module size; last word in module used.");
+				}
+				else if (entry.getValue().size()>1) {
+					System.out.println(entry.getKey()+"="+entry.getValue().get(entry.getValue().size()-1) + " Error: This variable is multiply defined; last value used."); 
+				}
+				else System.out.println(entry.getKey()+"="+entry.getValue().get(0));
+				if (!totalUses.contains(entry.getKey())) {
+					notUsed.add(entry.getKey());
+					
+				}
+				
+				
+				
+			}
+		}	
 		
+		ArrayList<Integer> resolvedAddress = new ArrayList<Integer>();
 		for (int i = 0; i < modAddress.size(); i++) {
 			int counter = 0;
 			for (int j = 0; j < modAddress.get(i).size(); j++) {
 				int code = modAddress.get(i).get(j) % 10;
-			
 				int temp = 0;
 				switch (code) { // Assuming all instructions have either 1, 2, 3, 4 as rightmost digit
 				case 1: 
@@ -225,26 +285,47 @@ public class TwoPassLinker {
 				break;
 				default:
 				//TODO resolve for 4 temp = modAddress.get(i).get(j)
-				
 				// int index = modUses.get(i).get(counter);
-				temp = resolveAddress(modAddress.get(i).get(j)/10, table.get(modUses.get(i).get(counter)));
+				if (table.get(modUses.get(i)[j]) == null) {
+					temp = resolveAddress(modAddress.get(i).get(j)/10, 111);
+				}
+				else {
+					temp = resolveAddress(modAddress.get(i).get(j)/10, table.get(modUses.get(i)[j]).get(table.get(modUses.get(i)[j]).size()-1));
+				}
 				counter++;
-				// System.out.println("moduses" + modUses);
-				// System.out.println("mod address" + modAddress);
-				// System.out.println("table" + table);
-				
-				
-				
-				
-				
+				// System.out.println("moduses" + modUses.get(0)[1]);
+				// for (int k = 0; i < modUses.size(); i++) {
+				// 	for (int l = 0; j < modUses.get(k).length; j++) {
+				// 		System.out.println(modUses.get(k)[l]);
+				// 	}
+				// }
 				
 				}
 				resolvedAddress.add(temp);
+				
 			}
 		}
-		// System.out.println(resolvedAddress);
-		
+		System.out.println("\n" + "Memory Map");
+		for (int i = 0; i < resolvedAddress.size(); i++) {
+			if (!table.containsKey(totalUses.get(i)) && totalUses.get(i)!= null) {
+				System.out.println(i+": " + resolvedAddress.get(i) + " Error: "+ totalUses.get(i) + " is not defined; 111 used.");
+			}
+			else if (duplicate[i]) {
+				System.out.println(i+": " + resolvedAddress.get(i) + " Error: Multiple variables used in instruction; all but last ignored.");
+			}
+			else if (resolvedAddress.get(i)/1000 == 2 && resolvedAddress.get(i)%1000 > 300) {
+				System.out.println(i+": " + (resolvedAddress.get(i)/1000*1000+299) + " Error: Absolute address exceeds machine size; largest legal value used.");
+			}
+			else {
+				System.out.println(i+": " + resolvedAddress.get(i));
+			}
+			
+		}
 
+		for (int i = 0; i < notUsed.size(); i++) {
+			System.out.println("Warning: " + notUsed.get(i) + " was defined but never used.");
+		}
+ 
 
 	}
 
@@ -262,12 +343,8 @@ public class TwoPassLinker {
 		int temp = Dummy;
 		int numOfDigits = 0;
 		int target = Target;
-		while (dummy > 1) {
-			numOfDigits++;
-			dummy/=10;
-		}
-		target /= Math.pow(10.0, numOfDigits);
-		target *= Math.pow(10.0, numOfDigits);
+		target /= 1000;
+		target *= 1000;
 		target += temp;
 		return target;
 	}
