@@ -4,7 +4,8 @@ import java.util.*;
 
 /*
 * An implementation of Operating Systems Lab 1. 
-* Two Pass Linker which links 
+* Two Pass Linker 
+* @Author: Eric Fang ef1467
 */
 public class TwoPassLinker {
 	static ArrayList tokens = new ArrayList<String>();
@@ -62,14 +63,15 @@ public class TwoPassLinker {
 	}
 
 	public static void keyboardScanner() {
-		System.out.println("Please type the input. Type exit to finish reading.");
+		System.out.println("Please type the input. Type exit and enter twice to finish reading.");
 		Scanner inputScanner = new Scanner(System.in);
 		String[] readIn;
 		String current = "";
-		while (inputScanner.hasNext()) { // Read through input and split into token array
+		boolean on = true;
+		while (inputScanner.hasNext() && on) { // Read through input and split into token array
 			current = inputScanner.nextLine();
 			if(current.equals("exit")) {
-				inputScanner.close();
+				on = false;
 			}
 			else {
 				readIn = current.split("\\s+");
@@ -85,6 +87,7 @@ public class TwoPassLinker {
 			}	
 			
 		}
+		inputScanner.close();
 	}
 
 	public static void firstPass() { // Pass one determines the base address for each module and the absolute address for each external symbol, storing the latter in the symbol table it produces
