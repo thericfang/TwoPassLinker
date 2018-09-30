@@ -9,9 +9,11 @@ Then run the class file
 `Erics-MacBook-Pro:TwoPassLinker thericfang$ java TwoPassLinker`
 
 The program should output what type of input is needed. For example, 
-```Please state the type of input:
+```
+Please state the type of input:
 1. File
-2. Typed```
+2. Typed
+```
 Please type the necessary input type with 1 or 2. Any other input will close the program.
 When the input is 1, type the name of the input file.
 I.e ```What is the file name? 
