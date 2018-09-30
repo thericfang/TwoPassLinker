@@ -2,7 +2,12 @@ import java.util.Scanner;
 import java.io.*;
 import java.util.*;
 
+/*
+* An implementation of Operating Systems Lab 1. 
+* Two Pass Linker which links 
+*/
 public class TwoPassLinker {
+	static ArrayList tokens = new ArrayList<String>();
 	static ArrayList<String> totalUses = new ArrayList<String>(); 
 	static int modNum;
 	static int useCount;
@@ -24,23 +29,21 @@ public class TwoPassLinker {
 		if (inputType == 1) { // If file, then ask for filename and proceed to run linker
 			System.out.println("What is the file name?");
 			String inputName = kbScanner.nextLine();
-			firstPass(newScanner(inputName));
-			secondPass(newScanner(inputName));
+			parseScanner(newScanner(inputName));
+			firstPass();
+			secondPass();
 			kbScanner.close();
 		}
-		else {
-			System.out.println("Please type the input. Type * to finish reading.");
-			Scanner input = new Scanner(System.in);
-			String s = "";
-			while (input.hasNext() && !s.equals("exit")) {
-				s = input.next();		
-			}
-			input.close();
+		else if (inputType == 2) {
+			keyboardScanner();
+			firstPass();
+			secondPass();
+			System.exit(0);
 			
-
-		
-			firstPass(input);
-			secondPass(input);
+		}
+		else {
+			System.out.println("Error: Not a valid input!");
+			System.exit(0);
 		}
 	}
 	public static Scanner newScanner(String inputName) {
@@ -58,21 +61,34 @@ public class TwoPassLinker {
 		return null;
 	}
 
-	public static void firstPass(Scanner inputScanner) { // Pass one determines the base address for each module and the absolute address for each external symbol, storing the latter in the symbol table it produces
+	public static void keyboardScanner() {
+		System.out.println("Please type the input. Type exit to finish reading.");
+		Scanner inputScanner = new Scanner(System.in);
 		String[] readIn;
-		ArrayList tokens = new ArrayList<String>();
+		String current = "";
 		while (inputScanner.hasNext()) { // Read through input and split into token array
-			String current = inputScanner.nextLine();	
-			readIn = current.split("\\s+");
-			for(int j = 0; j < readIn.length; j++) {
-				if(!(readIn[j]).equals("")) {
-				
-				tokens.add(readIn[j]);
-				
-				}
-				
+			current = inputScanner.nextLine();
+			if(current.equals("exit")) {
+				inputScanner.close();
 			}
+			else {
+				readIn = current.split("\\s+");
+				for(int j = 0; j < readIn.length; j++) {
+					if(!(readIn[j]).equals("")) {
+						
+						tokens.add(readIn[j]);
+						
+					
+					}		
+					
+				}
+			}	
+			
 		}
+	}
+
+	public static void firstPass() { // Pass one determines the base address for each module and the absolute address for each external symbol, storing the latter in the symbol table it produces
+		
 		modNum = Integer.parseInt((String)tokens.get(0)); // Number of modules 
 
 		
@@ -179,7 +195,7 @@ public class TwoPassLinker {
 	/* Pass two uses the base addresses and the symbol table computed in pass one to generate the actual output
 	by relocating relative addresses and resolving external references.*/
 
-	public static void secondPass (Scanner inputScanner) { 
+	public static void secondPass () { 
 		// ArrayList<Integer> tempAddress = new ArrayList<Integer>();
 		int curMod = 0;
 		
@@ -349,6 +365,30 @@ public class TwoPassLinker {
 		return target;
 	}
 	
+	public static void parseScanner(Scanner inputScanner) {
+		String[] readIn;
+		String current = "";
+		while (inputScanner.hasNext()) { // Read through input and split into token array
+			current = inputScanner.nextLine();
+			if(current.equals("exit")) {
+				inputScanner.close();
+				System.exit(0);
+			}
+			else {
+				readIn = current.split("\\s+");
+				for(int j = 0; j < readIn.length; j++) {
+					if(!(readIn[j]).equals("")) {
+						
+						tokens.add(readIn[j]);
+						
+					
+					}		
+					
+				}
+			}	
+			
+		}
+	}
 
 	
 
